@@ -1,32 +1,413 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>极简记账</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+        }
+        body {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+            padding-bottom: 20px;
+        }
+        /* 顶部统计栏-固定置顶 */
+        .statistics {
+            width: 100%;
+            background: #ffffff;
+            padding: 18px 20px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e8e8ed;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .statistics h2 {
+            font-size: 16px;
+            color: #86868b;
+            margin-bottom: 12px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #86868b;
+            margin-bottom: 4px;
+        }
+        .income {
+            font-size: 17px;
+            font-weight: 600;
+            color: #34c759;
+        }
+        .expense {
+            font-size: 17px;
+            font-weight: 600;
+            color: #ff3b30;
+        }
+        .balance {
+            font-size: 17px;
+            font-weight: 600;
+            color: #007aff;
+        }
+        /* 记账表单区 */
+        .form-box {
+            width: 92%;
+            margin: 0 auto 20px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .form-item {
+            margin-bottom: 18px;
+            width: 100%;
+        }
+        label {
+            display: block;
+            font-size: 15px;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        select, input {
+            width: 100%;
+            height: 44px;
+            min-height: 44px;
+            padding: 0 15px;
+            border: 1px solid #e8e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #ffffff;
+            color: #1d1d1f;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .btn-save {
+            width: 100%;
+            height: 48px;
+            min-height: 48px;
+            background: #007aff;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-save:active {
+            background: #0062cc;
+        }
+        /* 记账列表区 */
+        .list-box {
+            width: 92%;
+            margin: 0 auto;
+        }
+        .list-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+        }
+        .bill-item {
+            width: 100%;
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .bill-info {
+            flex: 1;
+        }
+        .bill-type {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .bill-cate {
+            font-size: 13px;
+            color: #86868b;
+            margin-bottom: 6px;
+        }
+        .bill-date {
+            font-size: 12px;
+            color: #c7c7cc;
+        }
+        .bill-remark {
+            font-size: 13px;
+            color: #515154;
+            margin-top: 4px;
+        }
+        .bill-amount {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .amount-text {
+            font-size: 17px;
+            font-weight: 600;
+        }
+        .btn-del {
+            margin-top: 8px;
+            background: #ff3b30;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 60px;
+        }
+        .btn-del:active {
+            background: #cc2e25;
+        }
+        .empty-tip {
+            text-align: center;
+            color: #86868b;
+            font-size: 15px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部统计区域 -->
+    <div class="statistics">
+        <h2>本月收支统计</h2>
+        <div class="stat-row">
+            <div class="stat-item">
+                <div class="stat-label">总收入</div>
+                <div class="income" id="totalIncome">¥ 0.00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">总支出</div>
+                <div class="expense" id="totalExpense">¥ 0.00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">本月结余</div>
+                <div class="balance" id="totalBalance">¥ 0.00</div>
+            </div>
+        </div>
+    </div>
 
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
-            <form class="row" id="greet-form">
-                <input id="inputValue" placeholder="Enter a something..." />
-            </form>
-            <div class="resultBox">
-                <span>result: </span>
-                <span id="result"></span>
-            </div>
-            <div class="invokeBox">
-                <button id="openUrl">open_url_browser</button>
-                <button id="openUrlNew">open_url_new</button>
-                <button id="runCommand">run_command</button>
-                <button id="downloadFile">download_file</button>
-                <button id="getExeDir">get_exe_dir</button>
-                <button id="getEnvVar">get_env_var</button>
-                <button id="findPort">find_port</button>
-            </div>
-        </main>
-    </body>
+    <!-- 记账表单区域 -->
+    <div class="form-box">
+        <div class="form-item">
+            <label for="billType">收支类型 ✅</label>
+            <select id="billType">
+                <option value="收入">收入</option>
+                <option value="支出">支出</option>
+            </select>
+        </div>
+        <div class="form-item">
+            <label for="billCate">收支分类 ✅</label>
+            <select id="billCate">
+                <option value="餐饮">餐饮</option>
+                <option value="交通">交通</option>
+                <option value="购物">购物</option>
+                <option value="工资">工资</option>
+                <option value="房租">房租</option>
+                <option value="娱乐">娱乐</option>
+                <option value="理财">理财</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="form-item">
+            <label for="billAmount">金额(元) ✅</label>
+            <input type="number" id="billAmount" placeholder="请输入金额，支持两位小数" step="0.01" min="0">
+        </div>
+        <div class="form-item">
+            <label for="billDate">记账日期</label>
+            <input type="date" id="billDate">
+        </div>
+        <div class="form-item">
+            <label for="billRemark">备注（选填）</label>
+            <input type="text" id="billRemark" placeholder="如：午餐、打车费">
+        </div>
+        <button class="btn-save" onclick="saveBill()">保存记账记录</button>
+    </div>
+
+    <!-- 记账列表区域 -->
+    <div class="list-box">
+        <div class="list-title">记账明细</div>
+        <div id="billList"></div>
+    </div>
+
+    <script>
+        // 初始化日期为当天
+        window.onload = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('billDate').value = today;
+            renderBillList();
+            calculateStatistics();
+        };
+
+        // 格式化金额为两位小数
+        function formatAmount(num) {
+            return parseFloat(num).toFixed(2);
+        }
+
+        // 保存记账记录到LocalStorage
+        function saveBill() {
+            const type = document.getElementById('billType').value;
+            const cate = document.getElementById('billCate').value;
+            const amount = document.getElementById('billAmount').value.trim();
+            const date = document.getElementById('billDate').value;
+            const remark = document.getElementById('billRemark').value.trim() || '无备注';
+
+            // 数据校验 - 严格校验
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                alert('请输入有效的正数金额，支持两位小数！');
+                return;
+            }
+            if (parseFloat(amount).toString().split('.').length > 2 && parseFloat(amount).toString().split('.')[1].length > 2) {
+                alert('金额最多支持两位小数，请重新输入！');
+                return;
+            }
+            if (!date) {
+                alert('请选择记账日期！');
+                return;
+            }
+
+            // 构造记账数据对象
+            const billObj = {
+                id: Date.now(), // 用时间戳做唯一ID，方便删除
+                type: type,
+                category: cate,
+                amount: formatAmount(amount),
+                date: date,
+                remark: remark,
+                createTime: Date.now()
+            };
+
+            // 读取本地存储数据
+            let billData = JSON.parse(localStorage.getItem('iosBillData')) || [];
+            billData.unshift(billObj); // 新增数据放最前面
+            localStorage.setItem('iosBillData', JSON.stringify(billData));
+
+            // 清空表单
+            document.getElementById('billAmount').value = '';
+            document.getElementById('billRemark').value = '';
+
+            // 刷新列表和统计
+            renderBillList();
+            calculateStatistics();
+            alert('记账成功！');
+        }
+
+        // 渲染记账列表
+        function renderBillList() {
+            const billList = document.getElementById('billList');
+            let billData = JSON.parse(localStorage.getItem('iosBillData')) || [];
+            
+            // 排序：日期倒序 → 录入时间倒序
+            billData.sort((a, b) => {
+                if (b.date !== a.date) {
+                    return b.date.localeCompare(a.date);
+                } else {
+                    return b.createTime - a.createTime;
+                }
+            });
+
+            if (billData.length === 0) {
+                billList.innerHTML = '<div class="empty-tip">暂无记账记录，开始记账吧～</div>';
+                return;
+            }
+
+            let html = '';
+            billData.forEach(item => {
+                const amountColor = item.type === '收入' ? '#34c759' : '#ff3b30';
+                html += `
+                    <div class="bill-item">
+                        <div class="bill-info">
+                            <div class="bill-type" style="color:${amountColor}">${item.type}</div>
+                            <div class="bill-cate">${item.category}</div>
+                            <div class="bill-date">${item.date}</div>
+                            <div class="bill-remark">${item.remark}</div>
+                        </div>
+                        <div class="bill-amount">
+                            <div class="amount-text" style="color:${amountColor}">¥ ${item.amount}</div>
+                            <button class="btn-del" onclick="deleteBill(${item.id})">删除</button>
+                        </div>
+                    </div>
+                `;
+            });
+            billList.innerHTML = html;
+        }
+
+        // 删除记账记录
+        function deleteBill(id) {
+            if (confirm('确认要删除这条记账记录吗？删除后无法恢复！')) {
+                let billData = JSON.parse(localStorage.getItem('iosBillData')) || [];
+                billData = billData.filter(item => item.id !== id);
+                localStorage.setItem('iosBillData', JSON.stringify(billData));
+                renderBillList();
+                calculateStatistics();
+            }
+        }
+
+        // 本地实时计算本月收支统计
+        function calculateStatistics() {
+            let billData = JSON.parse(localStorage.getItem('iosBillData')) || [];
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            // 只计算本月数据
+            billData.forEach(item => {
+                const billDate = new Date(item.date);
+                const billMonth = billDate.getMonth() + 1;
+                const billYear = billDate.getFullYear();
+                const amount = parseFloat(item.amount);
+                
+                if (billYear === currentYear && billMonth === currentMonth) {
+                    if (item.type === '收入') {
+                        totalIncome += amount;
+                    } else {
+                        totalExpense += amount;
+                    }
+                }
+            });
+
+            const balance = totalIncome - totalExpense;
+            // 更新页面统计数据
+            document.getElementById('totalIncome').textContent = `¥ ${formatAmount(totalIncome)}`;
+            document.getElementById('totalExpense').textContent = `¥ ${formatAmount(totalExpense)}`;
+            document.getElementById('totalBalance').textContent = `¥ ${formatAmount(balance)}`;
+        }
+    </script>
+</body>
 </html>
